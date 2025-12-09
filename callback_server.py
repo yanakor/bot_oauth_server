@@ -43,6 +43,6 @@ def hh_callback():
         """
     return "<h1>❌ Ошибка авторизации</h1>"
 
-if name == '__main__':  # ← 2 подчёркивания слева + 2 справа!
+if __name__ == '__main__': 
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
