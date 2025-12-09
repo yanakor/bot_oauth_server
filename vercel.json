@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "callback_server.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "callback_server.py"
+    }
+  ]
+}
