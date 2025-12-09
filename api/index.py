@@ -1,58 +1,66 @@
-from flask import Flask, request, redirect
-import requests
+from flask import Flask, request
 import os
-import uuid
 
 app = Flask(__name__)
-
-CLIENT_ID = "PFBD02JSP78M0NQ65ABL5CM8O98Q6RADDCDBUQVP2KO07A9KS7Q2G3EM47U6MQIR"
-CLIENT_SECRET = "Q16BLТОЙ_ПОЛНЫЙ_MI8RB"  # Твой Secret
-BOT_TOKEN = "ТВОЙ_BOT_TOKEN"
 
 @app.route('/')
 def home():
     return """
-<h1>🤖 HH Bot OAuth @yanaoqa</h1>
-<p>✅ Server is running</p>
-<p>This is an OAuth callback endpoint for HeadHunter authorization.</p>
+<!DOCTYPE html>
+<html>
+<head><title>🤖 HH Bot OAuth @yanaoqa</title></head>
+<body style="font-family: Arial; text-align: center;">
+    <h1>🤖 HH Bot OAuth Server</h1>
+    <p>✅ Server is running</p>
+    <p>This is an OAuth callback endpoint for HeadHunter authorization.</p>
+    <hr>
+    <p>Бот: @yakorqa_resume_hh_bot</p>
+</body>
+</html>
     """
 
 @app.route('/oauth/callback')
 def hh_callback():
     code = request.args.get('code')
-    state = request.args.get('state')
+    state = request.args.get('state', 'none')
     
-    if code and state:
-        # Обмен code → token
-        url = "https://api.hh.ru/token"
-        data = {
-            'grant_type': 'authorization_code',
-            'client_id': CLIENT_ID,
-            'client_secret': CLIENT_SECRET,
-            'code': code,
-            'redirect_uri': request.url_root + 'oauth/callback'
-        }
-        
-        token_response = requests.post(url, data=data).json()
-        
-        if 'access_token' in token_response:
-            token = token_response['access_token']
-            
-            # Отправляем токен в бот
-            bot_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-            bot_data = {
-                'chat_id': state,
-                'text': f"✅ **Авторизация успешна!**\n\n🎉 Добро пожаловать в бот для автоматического поиска работы на HeadHunter!\n\n📋 Нажмите кнопку ниже, чтобы открыть главное меню:",
-                'reply_markup': '{"inline_keyboard":[[{"text":"Открыть главное меню","callback_data":"main_menu_open"}]]}',
-                'parse_mode': 'Markdown'
-            }
-            
-            requests.post(bot_url, json=bot_data)
-            
-            return f"""
-<h1>✅ Авторизация успешна!</h1>
-<p>Вы успешно авторизовались через HeadHunter.</p>
-<p><a href="https://t.me/yakorqa_resume_hh_bot">Открыть бота</a></p>
-            """
+    print(f"DEBUG: code={code[:20] if code else 'None'}, state={state}")  # Vercel logs
     
-    return "<h1>❌ Ошибка авторизации</h1>"
+    if code:
+        # СОХРАНЯЕМ КОД ДЛЯ ТЕБЯ
+        try:
+            with open('/tmp/hh_code.txt', 'w') as f:
+                f.write(f"code={code}\nstate={state}")
+            print("✅ Код сохранён в /tmp/hh_code.txt")
+        except Exception as e:
+            print(f"⚠️ Не удалось сохранить: {e}")
+        
+        return f"""
+<!DOCTYPE html>
+<html>
+<head><title>✅ Авторизация успешна!</title></head>
+<body style="font-family: Arial; text-align: center; background: #d4edda;">
+    <h1>✅ Код авторизации получен!</h1>
+    <p><b>Code:</b> {code[:30]}...</p>
+    <p><b>State:</b> {state}</p>
+    <hr>
+    <p>✅ Можешь закрыть вкладку!</p>
+    <p><a href="https://t.me/yakorqa_resume_hh_bot">Вернись в Telegram бота</a></p>
+</body>
+</html>
+        """
+    else:
+        return """
+<!DOCTYPE html>
+<html>
+<head><title>❌ Ошибка</title></head>
+<body style="font-family: Arial; text-align: center; background: #f8d7da;">
+<h1>❌ Ошибка авторизации</h1>
+<p>Код не получен. Попробуй ещё раз.</p>
+<p>Code: {code}<br>State: {state}</p>
+</body>
+</html>
+        """.format(code=code or 'None', state=state)
+
+if __name__ == '__main__':
+    port = int(os.environ
